@@ -1,122 +1,133 @@
 import os
 import sys
-from patient_record_repository import PatientRecordRepository
-from analyzers import BaseAnalyzer, DemographicAnalyzer, FinancialAnalyzer, OperationalAnalyzer
+import json
+# Import class-class yang sudah didefinisikan sebelumnya
+# Pastikan file penempatan class sudah sesuai (misal: dari src.models, src.repository, src.analyzers)
+# Jika semua kode Anda gabung dalam satu file, Anda bisa menghapus baris import di bawah ini.
+from src.patient_record_repository import PatientRecordRepository
+from src.analyzers import DiabetesAnalyzer, ClinicalAnalyzer, RiskFactorAnalyzer
 
 def main():
   # Tampilan Header Sistem
   print("============================================")
-  print("      HEALTHCARE DATA ANALYSIS SYSTEM       ")
+  print("      DIABETES PREDICTION DATA ANALYSIS     ")
   print("      Object-Oriented Implementation        ")
   print("============================================\n")
 
-  # Menentukan lokasi file (pastikan file CSV ada di lokasi ini)
-  file_path = "healthcare_dataset.csv"
+  # Menentukan lokasi file dataset
+  file_path = "./data/diabetes_dataset.csv"
   
-  # Jika diletakkan di dalam folder 'data', Anda bisa memakai: 
-  # file_path = os.path.join("data", "healthcare_dataset.csv")
-  
-  # 1. Inisialisasi Repository dan Muat Data
+  # 1. Inisialisasi Repository dan Muat Data CSV
   repo = PatientRecordRepository(file_path)
   
   try:
     repo.load_csv()
   except FileNotFoundError:
     print(f"[!] Error: File '{file_path}' tidak ditemukan.")
-    print("    Pastikan nama file dan lokasinya sudah benar.")
+    print("    Pastikan file CSV berada di folder yang sama dengan script ini.")
     sys.exit()
 
-  # 2. Ambil data pasien dari repository
   records = repo.get_all_patients()
   
   if not records:
     print("    -> Gagal memuat data atau data kosong. Program dihentikan.")
     sys.exit()
     
-  print(f"    -> Loaded {len(records):,} patients successfully.\n")
+  print(f"    -> Loaded {len(records):,} patient records successfully.\n")
 
-  # 3. Inisialisasi semua objek Analyzer menggunakan data dari repository
-  base_analyzer = BaseAnalyzer(records)
-  ops_analyzer = OperationalAnalyzer(records)
-  fin_analyzer = FinancialAnalyzer(records)
-  demo_analyzer = DemographicAnalyzer(records)
+  # 2. Inisialisasi Objek-Objek Analyzer menggunakan Data Terpilih
+  diabetes_an = DiabetesAnalyzer(records)
+  clinical_an = ClinicalAnalyzer(records)
+  risk_an = RiskFactorAnalyzer(records)
 
-  # 4. Looping Menu Interaktif
+  # 3. Looping Menu Interaktif CLI
   while True:
     print("\nMenu tersedia:")
-    print("    [1] Overall patient statistics")
-    print("    [2] Operational analysis (Stay & Admission)")
-    print("    [3] Financial analysis (Billing by Insurance)")
-    print("    [4] Demographic analysis (Age & Gender)")
-    print("    [5] Run full analysis report")
+    print("    [1] Overall statistics")
+    print("    [2] Diabetes distribution by gender & age")
+    print("    [3] Clinical indicators analysis (HbA1c, Glucose, BMI)")
+    print("    [4] Risk factors & comorbidities analysis")
+    print("    [5] Export full report to JSON")
     print("    [0] Exit")
 
     choice = input("\nPilih menu (0-5): ")
 
     if choice == '1':
-      print("\n[1] Overall Patient Statistics:")
-      print(f"      Total Patients in System : {base_analyzer.get_total_patients():,}")
+      print("\n[1] Overall Statistics:")
+      print(f"      Total Patients Evaluated : {diabetes_an.get_total_patients():,}")
+      print(f"      Total Positive Diabetes  : {diabetes_an.get_diabetic_count():,}")
+      print(f"      Overall Diabetes Rate    : {diabetes_an.get_diabetes_percentage()}%")
 
     elif choice == '2':
-      print("\n[2] Operational Analysis:")
-      print("      --- Avg Stay by Condition ---")
-      for cond, days in ops_analyzer.avg_stay_by_condition().items():
-        print(f"      {cond:<15} : {days} days")
+      print("\n[2] Diabetes Distribution by Demographic:")
+      print("      --- Diabetes by Gender ---")
+      for gender, count in diabetes_an.diabetes_by_gender().items():
+        print(f"      {gender:<15} : {count:,} patients")
         
-      print("\n      --- Admission Type Distribution ---")
-      for adm, count in ops_analyzer.admission_type_distribution().items():
-        print(f"      {adm:<15} : {count:,} patients")
+      print("\n      --- Diabetes by Age Group ---")
+      for age_grp, count in diabetes_an.diabetes_by_age_group().items():
+        print(f"      {age_grp:<15} : {count:,} patients")
 
     elif choice == '3':
-      print("\n[3] Financial Analysis:")
-      print("      --- Avg Billing by Insurance ---")
-      for prov, bill in fin_analyzer.avg_billing_by_insurance().items():
-        print(f"      {prov:<15} : ${bill:,.2f}")
+      print("\n[3] Clinical Indicators Analysis:")
+      hba1c_data = clinical_an.analyze_hba1c()
+      glucose_data = clinical_an.analyze_blood_glucose()
+      bmi_data = clinical_an.analyze_bmi()
+
+      print("      --- Average HbA1c Level ---")
+      print(f"      Diabetic Patients : {hba1c_data['avg_diabetes']}%")
+      print(f"      Normal Patients   : {hba1c_data['avg_normal']}%")
+      
+      print("\n      --- Average Blood Glucose Level ---")
+      print(f"      Diabetic Patients : {glucose_data['avg_diabetes']} mg/dL")
+      print(f"      Normal Patients   : {glucose_data['avg_normal']} mg/dL")
+      
+      print("\n      --- Average BMI (Body Mass Index) ---")
+      print(f"      Diabetic Patients : {bmi_data['avg_diabetes']} (Obese Class I)")
+      print(f"      Normal Patients   : {bmi_data['avg_normal']} (Normal/Overweight)")
 
     elif choice == '4':
-      print("\n[4] Demographic Analysis:")
-      print("      --- Age Group Distribution ---")
-      for age_grp, count in demo_analyzer.age_group_distribution().items():
-        print(f"      {age_grp:<15} : {count:,} patients")
-        
-      print("\n      --- Medical Condition by Gender ---")
-      for gen, conds in demo_analyzer.medical_condition_by_gender().items():
-        print(f"      [{gen.upper()}]")
-        for c, count in conds.items():
-          print(f"        - {c:<12} : {count:,} cases")
+      print("\n[4] Risk Factors & Comorbidities Analysis:")
+      ht_data = risk_an.analyze_hypertension_risk()
+      smoke_data = risk_an.analyze_smoking_impact()
+
+      print("      --- Hypertension Impact ---")
+      print(f"      Diabetes Rate with Hypertension    : {ht_data['diabetes_rate_with_hypertension']}%")
+      print(f"      Diabetes Rate without Hypertension : {ht_data['diabetes_rate_without_hypertension']}%")
+      print("      (Pasien hipertensi berisiko ~4x lipat lebih tinggi terkena diabetes)")
+      
+      print("\n      --- Smoking History Diabetes Prevalence ---")
+      for status, percentage in smoke_data.items():
+        print(f"      {status:<15} : {percentage}% diabetes prevalence")
 
     elif choice == '5':
-      print("\n============================================")
-      print("             FULL ANALYSIS REPORT           ")
-      print("============================================")
+      print("\n[5] Exporting Full Report to JSON...")
       
-      print(f"\n[1] Total Patients: {base_analyzer.get_total_patients():,}")
+      # Memanfaatkan polymorphic behavior dari method generate_summary()
+      full_report = {
+        "metadata": {
+          "total_records": diabetes_an.get_total_patients(),
+          "overall_diabetes_rate_percentage": diabetes_an.get_diabetes_percentage()
+        },
+        "demographics": diabetes_an.generate_summary(),
+        "clinical_indicators": clinical_an.generate_summary(),
+        "risk_factors": risk_an.generate_summary()
+      }
       
-      print("\n[2] Top 3 Longest Stays by Condition:")
-      stays = list(ops_analyzer.avg_stay_by_condition().items())[:3]
-      for cond, days in stays:
-        print(f"      {cond:<15} : {days} days")
-        
-      print("\n[3] Top 3 Highest Billing Insurance:")
-      bills = list(fin_analyzer.avg_billing_by_insurance().items())[:3]
-      for prov, bill in bills:
-        print(f"      {prov:<15} : ${bill:,.2f}")
-        
-      print("\n[4] Patient Demographics:")
-      for age_grp, count in demo_analyzer.age_group_distribution().items():
-        print(f"      {age_grp:<15} : {count:,} patients")
-        
-      print("\n============================================")
-      print("  Analysis complete. All methods executed.  ")
-      print("============================================")
+      output_filename = "diabetes_analysis_report.json"
+      
+      file_output = open(output_filename, mode='w', encoding='utf-8')
+      json.dump(full_report, file_output, indent=2)
+      file_output.close()
+      
+      print(f"      -> Berhasil! Laporan lengkap disimpan ke file: '{output_filename}'")
 
     elif choice == '0':
-      print("\nKeluar dari sistem. Terima kasih!")
+      print("\nKeluar dari sistem analisis. Terima kasih!")
       break
       
     else:
-      print("\nPilihan tidak valid. Silakan coba lagi.")
+      print("\nPilihan tidak valid. Silakan coba lagi menu (0-5).")
 
-# Titik eksekusi program utama
 if __name__ == "__main__":
   main()
