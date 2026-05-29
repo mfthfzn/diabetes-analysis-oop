@@ -1,34 +1,29 @@
+from dataclasses import dataclass
+
+#SRP / Single Responsibility Principle 
+@dataclass
 class PatientRecord:
-  def __init__(
-    self, 
-    gender: str, 
-    age: float, 
-    hypertension: int, 
-    heart_disease: int, 
-    smoking_history: str, 
-    bmi: float, 
-    hba1c_level: float, 
-    blood_glucose_level: int, 
-    diabetes: int
-  ):
-    self.gender = gender
-    self.age = age
-    self.hypertension = hypertension
-    self.heart_disease = heart_disease
-    self.smoking_history = smoking_history
-    self.bmi = bmi
-    self.hba1c_level = hba1c_level
-    self.blood_glucose_level = blood_glucose_level
-    self.diabetes = diabetes
+  gender: str
+  age: int
+  hypertension: int
+  heart_disease: int
+  smoking_history: str
+  bmi: float
+  hba1c_level: float
+  blood_glucose_level: int
+  diabetes: int
+
+  def __post_init__(self):
+    if isinstance(self.gender, str):
+      self.gender = self.gender.strip()
+    if isinstance(self.smoking_history, str):
+      self.smoking_history = self.smoking_history.strip()
 
   def has_diabetes(self) -> bool:
-    """Mengembalikan True jika pasien terdiagnosis diabetes (angka 1)"""
     return self.diabetes == 1
 
   def has_hypertension(self) -> bool:
-    """Mengembalikan True jika pasien memiliki hipertensi (angka 1)"""
     return self.hypertension == 1
 
   def has_heart_disease(self) -> bool:
-    """Mengembalikan True jika pasien memiliki riwayat penyakit jantung (angka 1)"""
     return self.heart_disease == 1
