@@ -1,32 +1,21 @@
-import os
 import sys
 import json
-# Import class-class yang sudah didefinisikan sebelumnya
-# Pastikan file penempatan class sudah sesuai (misal: dari src.models, src.repository, src.analyzers)
-# Jika semua kode Anda gabung dalam satu file, Anda bisa menghapus baris import di bawah ini.
+from src.patient_data_reader import CsvPatientDataReader
 from src.patient_record_repository import PatientRecordRepository
 from src.analyzers import DiabetesAnalyzer, ClinicalAnalyzer, RiskFactorAnalyzer
 
 def main():
-  # Tampilan Header Sistem
   print("============================================")
   print("      DIABETES PREDICTION DATA ANALYSIS     ")
   print("      Object-Oriented Implementation        ")
   print("============================================\n")
 
-  # Menentukan lokasi file dataset
   file_path = "./data/diabetes_dataset.csv"
   
-  # 1. Inisialisasi Repository dan Muat Data CSV
-  repo = PatientRecordRepository(file_path)
+  reader = CsvPatientDataReader(file_path)
+  repo = PatientRecordRepository(reader)
   
-  try:
-    repo.load_csv()
-  except FileNotFoundError:
-    print(f"[!] Error: File '{file_path}' tidak ditemukan.")
-    print("    Pastikan file CSV berada di folder yang sama dengan script ini.")
-    sys.exit()
-
+  repo.load()
   records = repo.get_all_patients()
   
   if not records:
@@ -35,12 +24,10 @@ def main():
     
   print(f"    -> Loaded {len(records):,} patient records successfully.\n")
 
-  # 2. Inisialisasi Objek-Objek Analyzer menggunakan Data Terpilih
   diabetes_an = DiabetesAnalyzer(records)
   clinical_an = ClinicalAnalyzer(records)
   risk_an = RiskFactorAnalyzer(records)
 
-  # 3. Looping Menu Interaktif CLI
   while True:
     print("\nMenu tersedia:")
     print("    [1] Overall statistics")
@@ -103,7 +90,6 @@ def main():
     elif choice == '5':
       print("\n[5] Exporting Full Report to JSON...")
       
-      # Memanfaatkan polymorphic behavior dari method generate_summary()
       full_report = {
         "metadata": {
           "total_records": diabetes_an.get_total_patients(),

@@ -1,4 +1,4 @@
-from patient_data_reader import PatientDataReader
+from src.patient_data_reader import PatientDataReader
 
 # DIP / Dependency Inversion Principle
 class PatientRecordRepository:
