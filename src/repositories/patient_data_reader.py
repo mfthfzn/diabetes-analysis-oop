@@ -1,6 +1,6 @@
 import csv
 from abc import ABC, abstractmethod
-from src.patient_record import PatientRecord
+from src.models.patient_record import PatientRecord
 
 # DIP / Dependency Inversion Principle
 class PatientDataReader(ABC):

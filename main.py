@@ -1,8 +1,7 @@
 import sys
-import json
-from src.patient_data_reader import CsvPatientDataReader
-from src.patient_record_repository import PatientRecordRepository
-from src.analyzers import DiabetesAnalyzer, ClinicalAnalyzer, RiskFactorAnalyzer
+from src.repositories.patient_data_reader import CsvPatientDataReader
+from src.repositories.patient_record_repository import PatientRecordRepository
+from src.services.diabetes_analysis_service import DiabetesAnalysisService
 
 def main():
   print("============================================")
@@ -12,11 +11,15 @@ def main():
 
   file_path = "./data/diabetes_dataset.csv"
   
+  # Setup infra data access
   reader = CsvPatientDataReader(file_path)
   repo = PatientRecordRepository(reader)
   
-  repo.load()
-  records = repo.get_all_patients()
+  # Inisialisasi Service Layer dengan menyuntikkan repository
+  analysis_service = DiabetesAnalysisService(repo)
+  
+  # Minta service untuk menyiapkan data sistem
+  records = analysis_service.initialize_data()
   
   if not records:
     print("    -> Gagal memuat data atau data kosong. Program dihentikan.")
@@ -24,10 +27,7 @@ def main():
     
   print(f"    -> Loaded {len(records):,} patient records successfully.\n")
 
-  diabetes_an = DiabetesAnalyzer(records)
-  clinical_an = ClinicalAnalyzer(records)
-  risk_an = RiskFactorAnalyzer(records)
-
+  # Looping Menu Interaktif CLI
   while True:
     print("\nMenu tersedia:")
     print("    [1] Overall statistics")
@@ -40,71 +40,56 @@ def main():
     choice = input("\nPilih menu (0-5): ")
 
     if choice == '1':
+      stats = analysis_service.get_overall_stats()
       print("\n[1] Overall Statistics:")
-      print(f"      Total Patients Evaluated : {diabetes_an.get_total_patients():,}")
-      print(f"      Total Positive Diabetes  : {diabetes_an.get_diabetic_count():,}")
-      print(f"      Overall Diabetes Rate    : {diabetes_an.get_diabetes_percentage()}%")
+      print(f"      Total Patients Evaluated : {stats['total']:,}")
+      print(f"      Total Positive Diabetes  : {stats['diabetic']:,}")
+      print(f"      Overall Diabetes Rate    : {stats['percentage']}%")
 
     elif choice == '2':
+      demo = analysis_service.get_demographic_analysis()
       print("\n[2] Diabetes Distribution by Demographic:")
       print("      --- Diabetes by Gender ---")
-      for gender, count in diabetes_an.diabetes_by_gender().items():
+      for gender, count in demo['gender'].items():
         print(f"      {gender:<15} : {count:,} patients")
         
       print("\n      --- Diabetes by Age Group ---")
-      for age_grp, count in diabetes_an.diabetes_by_age_group().items():
+      for age_grp, count in demo['age_group'].items():
         print(f"      {age_grp:<15} : {count:,} patients")
 
     elif choice == '3':
+      clinical = analysis_service.get_clinical_analysis()
       print("\n[3] Clinical Indicators Analysis:")
-      hba1c_data = clinical_an.analyze_hba1c()
-      glucose_data = clinical_an.analyze_blood_glucose()
-      bmi_data = clinical_an.analyze_bmi()
-
       print("      --- Average HbA1c Level ---")
-      print(f"      Diabetic Patients : {hba1c_data['avg_diabetes']}%")
-      print(f"      Normal Patients   : {hba1c_data['avg_normal']}%")
+      print(f"      Diabetic Patients : {clinical['hba1c']['avg_diabetes']}%")
+      print(f"      Normal Patients   : {clinical['hba1c']['avg_normal']}%")
       
       print("\n      --- Average Blood Glucose Level ---")
-      print(f"      Diabetic Patients : {glucose_data['avg_diabetes']} mg/dL")
-      print(f"      Normal Patients   : {glucose_data['avg_normal']} mg/dL")
+      print(f"      Diabetic Patients : {clinical['glucose']['avg_diabetes']} mg/dL")
+      print(f"      Normal Patients   : {clinical['glucose']['avg_normal']} mg/dL")
       
       print("\n      --- Average BMI (Body Mass Index) ---")
-      print(f"      Diabetic Patients : {bmi_data['avg_diabetes']} (Obese Class I)")
-      print(f"      Normal Patients   : {bmi_data['avg_normal']} (Normal/Overweight)")
+      print(f"      Diabetic Patients : {clinical['bmi']['avg_diabetes']} (Obese Class I)")
+      print(f"      Normal Patients   : {clinical['bmi']['avg_normal']} (Normal/Overweight)")
 
     elif choice == '4':
+      risk = analysis_service.get_risk_analysis()
       print("\n[4] Risk Factors & Comorbidities Analysis:")
-      ht_data = risk_an.analyze_hypertension_risk()
-      smoke_data = risk_an.analyze_smoking_impact()
-
       print("      --- Hypertension Impact ---")
-      print(f"      Diabetes Rate with Hypertension    : {ht_data['diabetes_rate_with_hypertension']}%")
-      print(f"      Diabetes Rate without Hypertension : {ht_data['diabetes_rate_without_hypertension']}%")
+      print(f"      Diabetes Rate with Hypertension    : {risk['hypertension']['diabetes_rate_with_hypertension']}%")
+      print(f"      Diabetes Rate without Hypertension : {risk['hypertension']['diabetes_rate_without_hypertension']}%")
       print("      (Pasien hipertensi berisiko ~4x lipat lebih tinggi terkena diabetes)")
       
       print("\n      --- Smoking History Diabetes Prevalence ---")
-      for status, percentage in smoke_data.items():
+      for status, percentage in risk['smoking'].items():
         print(f"      {status:<15} : {percentage}% diabetes prevalence")
 
     elif choice == '5':
+      output_filename = "diabetes_analysis_report.json"
       print("\n[5] Exporting Full Report to JSON...")
       
-      full_report = {
-        "metadata": {
-          "total_records": diabetes_an.get_total_patients(),
-          "overall_diabetes_rate_percentage": diabetes_an.get_diabetes_percentage()
-        },
-        "demographics": diabetes_an.generate_summary(),
-        "clinical_indicators": clinical_an.generate_summary(),
-        "risk_factors": risk_an.generate_summary()
-      }
-      
-      output_filename = "diabetes_analysis_report.json"
-      
-      file_output = open(output_filename, mode='w', encoding='utf-8')
-      json.dump(full_report, file_output, indent=2)
-      file_output.close()
+      # Logika ekspor yang rumit kini didelegasikan penuh ke service
+      analysis_service.export_report_to_json(output_filename)
       
       print(f"      -> Berhasil! Laporan lengkap disimpan ke file: '{output_filename}'")
 
