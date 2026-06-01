@@ -1,29 +1,59 @@
-from dataclasses import dataclass
-
-#SRP / Single Responsibility Principle 
-@dataclass
+# SRP / Single Responsibility Principle 
 class PatientRecord:
-  gender: str
-  age: int
-  hypertension: int
-  heart_disease: int
-  smoking_history: str
-  bmi: float
-  hba1c_level: float
-  blood_glucose_level: int
-  diabetes: int
+    def __init__(
+        self, 
+        gender: str, 
+        age: float, 
+        hypertension: int, 
+        heart_disease: int, 
+        smoking_history: str, 
+        bmi: float, 
+        hba1c_level: float, 
+        blood_glucose_level: int, 
+        diabetes: int
+    ):
+        self.__gender = gender
+        self.__age = age
+        self.__hypertension = hypertension
+        self.__heart_disease = heart_disease
+        self.__smoking_history = smoking_history
+        self.__bmi = bmi
+        self.__hba1c_level = hba1c_level
+        self.__blood_glucose_level = blood_glucose_level
+        self.__diabetes = diabetes
 
-  def __post_init__(self):
-    if isinstance(self.gender, str):
-      self.gender = self.gender.strip()
-    if isinstance(self.smoking_history, str):
-      self.smoking_history = self.smoking_history.strip()
+    @property
+    def gender(self) -> str:
+        return self.__gender
 
-  def has_diabetes(self) -> bool:
-    return self.diabetes == 1
+    @property
+    def age(self) -> int:
+        return self.__age
 
-  def has_hypertension(self) -> bool:
-    return self.hypertension == 1
+    @property
+    def hypertension(self) -> int:
+        return self.__hypertension
 
-  def has_heart_disease(self) -> bool:
-    return self.heart_disease == 1
+    @property
+    def heart_disease(self) -> int:
+        return self.__heart_disease
+
+    @property
+    def smoking_history(self) -> str:
+        return self.__smoking_history
+
+    @property
+    def bmi(self) -> float:
+        return self.__bmi
+
+    @property
+    def hba1c_level(self) -> float:
+        return self.__hba1c_level
+
+    @property
+    def blood_glucose_level(self) -> int:
+        return self.__blood_glucose_level
+
+    @property
+    def diabetes(self) -> int:
+        return self.__diabetes
