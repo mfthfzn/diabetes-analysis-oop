@@ -15,84 +15,94 @@ def main():
     
     reader = CsvPatientDataReader(file_path)
     repo = PatientRecordRepository(reader)
-    
     analysis_service = DiabetesAnalysisService(repo)
     
-    records = analysis_service.initialize_data()
-    
-    if not records:
-        print("    -> Gagal memuat data atau data kosong. Program dihentikan.")
-        sys.exit()
-        
-    print(f"    -> Loaded {len(records):,} patient records successfully.\n")
+    print("Status Sistem: [!] Data belum dimuat ke memori. Silakan pilih Menu [1].")
 
     while True:
         print("\nMenu tersedia:")
-        print("    [1] Overall statistics")
-        print("    [2] Diabetes distribution by gender & age")
-        print("    [3] Clinical indicators analysis (HbA1c, Glucose, BMI)")
-        print("    [4] Risk factors & comorbidities analysis")
-        print("    [5] View comprehensive summary")
-        print("    [6] Export full report to JSON")
-        print("    [0] Exit")
+        print("    [1]  Load Patient Dataset")
+        print("    [2]  Analyze Diabetes cases by Gender")
+        print("    [3]  Analyze Diabetes cases by Age Group")
+        print("    [4]  Analyze Average HbA1c Levels")
+        print("    [5]  Analyze Average Blood Glucose Levels")
+        print("    [6]  Analyze Average BMI (Body Mass Index)")
+        print("    [7]  Analyze Hypertension Risk Impact")
+        print("    [8]  Analyze Smoking History Diabetes Prevalence")
+        print("    [9]  View Comprehensive Summary (All Analyzers)")
+        print("    [10] Export Full Report to JSON File")
+        print("    [0]  Exit")
 
-        choice = input("\nPilih menu (0-6): ")
+        choice = input("\nPilih menu (0-10): ")
 
         if choice == '1':
-            stats = analysis_service.get_overall_stats()
-            print("\n[1] Overall Statistics:")
-            print(f"      Total Patients Evaluated : {stats['total']:,}")
-            print(f"      Total Positive Diabetes  : {stats['diabetic']:,}")
-            print(f"      Overall Diabetes Rate    : {stats['percentage']}%")
+            print("\n[1] Loading Data from CSV file...")
+            records = analysis_service.initialize_data()
+            
+            if not records:
+                print("    -> Gagal memuat data atau file dataset kosong.")
+            else:
+                stats = analysis_service.get_overall_stats()
+                print(f"    -> Sukses! Berhasil memuat {len(records):,} data pasien.")
+                print(f"    -> Total Kasus Diabetes Terdeteksi: {stats['diabetic']:,} ({stats['percentage']}%)")
+            continue
 
-        elif choice == '2':
-            demo = analysis_service.get_demographic_analysis()
-            print("\n[2] Diabetes Distribution by Demographic:")
-            print("      --- Diabetes by Gender ---")
-            for gender, count in demo['gender'].items():
+        if choice in ['2', '3', '4', '5', '6', '7', '8', '9', '10']:
+            if not analysis_service.is_data_initialized:
+                print("\n❌ AKSER DITOLAK: Data belum di-load! Silakan pilih menu [1] terlebih dahulu.")
+                continue
+
+        if choice == '2':
+            gender_data = analysis_service.get_diabetes_by_gender()
+            print("\n[2] Diabetes Distribution by Gender:")
+            for gender, count in gender_data.items():
                 print(f"      {gender:<15} : {count:,} patients")
-                
-            print("\n      --- Diabetes by Age Group ---")
-            for age_grp, count in demo['age_group'].items():
-                print(f"      {age_grp:<15} : {count:,} patients")
 
         elif choice == '3':
-            clinical = analysis_service.get_clinical_analysis()
-            print("\n[3] Clinical Indicators Analysis:")
-            print("      --- Average HbA1c Level ---")
-            print(f"      Diabetic Patients : {clinical['hba1c']['avg_diabetes']}%")
-            print(f"      Normal Patients   : {clinical['hba1c']['avg_normal']}%")
-            
-            print("\n      --- Average Blood Glucose Level ---")
-            print(f"      Diabetic Patients : {clinical['glucose']['avg_diabetes']} mg/dL")
-            print(f"      Normal Patients   : {clinical['glucose']['avg_normal']} mg/dL")
-            
-            print("\n      --- Average BMI (Body Mass Index) ---")
-            print(f"      Diabetic Patients : {clinical['bmi']['avg_diabetes']} (Obese Class I)")
-            print(f"      Normal Patients   : {clinical['bmi']['avg_normal']} (Normal/Overweight)")
+            age_data = analysis_service.get_diabetes_by_age_group()
+            print("\n[3] Diabetes Distribution by Age Group:")
+            for age_grp, count in age_data.items():
+                print(f"      {age_grp:<15} : {count:,} patients")
 
         elif choice == '4':
-            risk = analysis_service.get_risk_analysis()
-            print("\n[4] Risk Factors & Comorbidities Analysis:")
-            print("      --- Hypertension Impact ---")
-            print(f"      Diabetes Rate with Hypertension    : {risk['hypertension']['diabetes_rate_with_hypertension']}%")
-            print(f"      Diabetes Rate without Hypertension : {risk['hypertension']['diabetes_rate_without_hypertension']}%")
-            print("      (Pasien hipertensi berisiko ~4x lipat lebih tinggi terkena diabetes)")
-            
-            print("\n      --- Smoking History Diabetes Prevalence ---")
-            for status, percentage in risk['smoking'].items():
-                print(f"      {status:<15} : {percentage}% diabetes prevalence")
+            hba1c = analysis_service.get_analyze_hba1c()
+            print("\n[4] Clinical Indicators - Average HbA1c Level:")
+            print(f"      Diabetic Patients : {hba1c['avg_diabetes']}%")
+            print(f"      Normal Patients   : {hba1c['avg_normal']}%")
 
         elif choice == '5':
-            print("\n[5] Comprehensive Summary from All Analyzers:")
-            all_summaries = analysis_service.get_all_summaries()
-            
-            print(json.dumps(all_summaries, indent=4, ensure_ascii=False))
+            glucose = analysis_service.get_analyze_blood_glucose()
+            print("\n[5] Clinical Indicators - Average Blood Glucose Level:")
+            print(f"      Diabetic Patients : {glucose['avg_diabetes']} mg/dL")
+            print(f"      Normal Patients   : {glucose['avg_normal']} mg/dL")
 
         elif choice == '6':
+            bmi = analysis_service.get_analyze_bmi()
+            print("\n[6] Clinical Indicators - Average BMI (Body Mass Index):")
+            print(f"      Diabetic Patients : {bmi['avg_diabetes']} (Obese Class I)")
+            print(f"      Normal Patients   : {bmi['avg_normal']} (Normal/Overweight)")
+
+        elif choice == '7':
+            ht = analysis_service.get_analyze_hypertension_risk()
+            print("\n[7] Risk Factors - Hypertension Impact:")
+            print(f"      Diabetes Rate with Hypertension    : {ht['diabetes_rate_with_hypertension']}%")
+            print(f"      Diabetes Rate without Hypertension : {ht['diabetes_rate_without_hypertension']}%")
+            print("      (Pasien dengan riwayat hipertensi memiliki rasio penularan jauh lebih tinggi)")
+
+        elif choice == '8':
+            smoking = analysis_service.get_analyze_smoking_impact()
+            print("\n[8] Risk Factors - Smoking History Diabetes Prevalence:")
+            for status, percentage in smoking.items():
+                print(f"      {status:<15} : {percentage}% diabetes prevalence")
+
+        elif choice == '9':
+            print("\n[9] Comprehensive Summary from All Analyzers:")
+            all_summaries = analysis_service.get_all_summaries()
+            print(json.dumps(all_summaries, indent=4, ensure_ascii=False))
+
+        elif choice == '10':
             output_filename = "diabetes_analysis_report.json"
-            print("\n[6] Exporting Full Report to JSON...")
-            
+            print("\n[10] Exporting Full Report to JSON...")
             analysis_service.export_report_to_json(output_filename)
             print(f"      -> Berhasil! Laporan lengkap disimpan ke file: '{output_filename}'")
 
@@ -101,7 +111,7 @@ def main():
             break
             
         else:
-            print("\nPilihan tidak valid. Silakan coba lagi menu (0-6).")
+            print("\nPilihan tidak valid. Silakan coba lagi menu (0-10).")
 
 if __name__ == "__main__":
     main()
