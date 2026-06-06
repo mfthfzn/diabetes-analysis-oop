@@ -17,7 +17,7 @@ def main():
     repo = PatientRecordRepository(reader)
     analysis_service = DiabetesAnalysisService(repo)
     
-    print("Status Sistem: [!] Data belum dimuat ke memori. Silakan pilih Menu [1].")
+    print("Data belum dimuat ke memori. Silakan pilih Menu [1].")
 
     while True:
         print("\nMenu tersedia:")
@@ -49,7 +49,7 @@ def main():
 
         if choice in ['2', '3', '4', '5', '6', '7', '8', '9', '10']:
             if not analysis_service.is_data_initialized:
-                print("\n❌ AKSER DITOLAK: Data belum di-load! Silakan pilih menu [1] terlebih dahulu.")
+                print("\nAKSER DITOLAK: Data belum di-load! Silakan pilih menu [1] terlebih dahulu.")
                 continue
 
         if choice == '2':
