@@ -1,3 +1,10 @@
+import sys
+import os
+
+sys.dont_write_bytecode = True
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(current_dir))
+
 from src.repositories.patient_data_reader import CsvPatientDataReader
 from src.repositories.patient_record_repository import PatientRecordRepository
 from src.analyzers.diabetes_analyzers import DiabetesAnalyzer, ClinicalAnalyzer, RiskFactorAnalyzer
@@ -150,7 +157,7 @@ if __name__ == "__main__":
         test_risk_generate_summary()
         print("[OK] group_risk_factor_analyzer: Semua method tervalidasi dengan baik.")
         
-        print("\n🎉 SUKSES! Total 13 method di dalam seluruh Analyzers lolos validasi logika!")
+        print("\nSUKSES! Total 13 method di dalam seluruh Analyzers lolos validasi logika!")
         
     except AssertionError as error:
-        print(f"\n❌ VALIDASI GAGAL! Terjadi kesalahan pada logika program: {error}")
+        print(f"\nVALIDASI GAGAL! Terjadi kesalahan pada logika program: {error}")
