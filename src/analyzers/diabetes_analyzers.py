@@ -40,7 +40,7 @@ class BaseAnalyzer(ABC):
 
     @abstractmethod
     def generate_summary(self) -> dict:
-        """Method abstrak wajib untuk menghasilkan ringkasan laporan analisis."""
+        """Method abstrak untuk menghasilkan ringkasan laporan analisis."""
         pass
 
 

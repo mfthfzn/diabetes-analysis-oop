@@ -98,7 +98,7 @@ def main():
         elif choice == '9':
             print("\n[9] Comprehensive Summary from All Analyzers:")
             all_summaries = analysis_service.get_all_summaries()
-            print(json.dumps(all_summaries, indent=4, ensure_ascii=False))
+            print(json.dumps(all_summaries, indent=4))
 
         elif choice == '10':
             output_filename = "diabetes_analysis_report.json"
